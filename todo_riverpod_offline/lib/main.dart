@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:hello_riverpod/openapi/lib/api.dart';
 import 'package:hello_riverpod/state.dart';
+import 'package:hello_riverpod/types.dart';
 
 void main() {
   runApp(
@@ -120,7 +120,7 @@ class TodoListView extends ConsumerWidget {
   Widget checkmarkIcon(BuildContext context, WidgetRef ref, Todo todo) {
     return IconButton(
       icon: const Icon(Icons.check),
-      color: todo.isCompleted == true ? Colors.green : null,
+      color: todo.isCompleted ? Colors.green : null,
       tooltip: "Mark complete",
       onPressed: () {
         ref.read(todosProvider.notifier).todoToggleIsCompleted(todo.id);
@@ -171,9 +171,8 @@ class TodoListView extends ConsumerWidget {
                 return ListTile(
                   title: TextButton(
                     style: TextButton.styleFrom(
-                      foregroundColor: todo.isCompleted == true
-                          ? Colors.green
-                          : Colors.black,
+                      foregroundColor:
+                          todo.isCompleted ? Colors.green : Colors.black,
                       backgroundColor:
                           todo.id == ref.read(todoSelectedIdProvider)
                               ? Colors.lightGreenAccent
