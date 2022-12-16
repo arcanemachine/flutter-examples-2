@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hello_riverpod/openapi/lib/api.dart';
 import 'package:hello_riverpod/state.dart';
 
-void main() {
+void main() async {
   runApp(
-    const ProviderScope(child: MyApp()),
+    const ProviderScope(
+      child: MyApp(),
+    ),
   );
 }
 
@@ -42,7 +44,7 @@ class TodoForm extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final formKey = GlobalKey<FormState>();
     final textInputController = TextEditingController();
-    final todoSelectedId = ref.read(todoSelectedIdProvider);
+    final int todoSelectedId = ref.read(todoSelectedIdProvider);
 
     // rebuild widget when selected todo ID changes
     ref.watch(todoSelectedIdProvider);
@@ -65,9 +67,9 @@ class TodoForm extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: TextFormField(
               controller: textInputController,
-              decoration: const InputDecoration(
-                border: UnderlineInputBorder(),
-                labelText: "Add todo...",
+              decoration: InputDecoration(
+                border: const UnderlineInputBorder(),
+                labelText: "${todoSelectedId == 0 ? 'Add' : 'Modify'} todo...",
               ),
               validator: (val) {
                 if (val == null || val.isEmpty) {
@@ -150,47 +152,65 @@ class TodoListView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // rebuild the widget when the todo list changes
-    List<Todo> todos = ref.watch(todosProvider);
-    int todoSelectedId = ref.watch(todoSelectedIdProvider);
+    AsyncValue<Map> joke = ref.watch(jokeProvider);
 
-    // Let's render the todos in a scrollable list view
-    return Expanded(
-      child: todos.isEmpty
-          ? const Padding(
-              padding: EdgeInsets.only(top: 16.0),
-              child: Text("No todos created..."),
-            )
-          : ListView.builder(
-              shrinkWrap: true,
-              scrollDirection: Axis.vertical,
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: todos.length,
-              itemBuilder: (BuildContext context, int i) {
-                Todo todo = todos[i];
-
-                return ListTile(
-                  title: TextButton(
-                    style: TextButton.styleFrom(
-                      foregroundColor: todo.isCompleted == true
-                          ? Colors.green
-                          : Colors.black,
-                      backgroundColor:
-                          todo.id == ref.read(todoSelectedIdProvider)
-                              ? Colors.lightGreenAccent
-                              : null,
-                      alignment: Alignment.centerLeft,
-                    ),
-                    child: Text(todo.content),
-                    onPressed: () {
-                      ref.read(todoSelectedIdProvider.notifier).update(todo.id);
-                    },
-                  ),
-                  trailing: todoSelectedId != todo.id
-                      ? checkmarkIcon(context, ref, todo)
-                      : deleteIcon(context, ref, todo),
-                );
-              },
-            ),
+    return joke.when(
+      loading: () => const CircularProgressIndicator(),
+      error: (err, stack) => Text("Error: $err"),
+      data: (data) => Text(data['joke']),
     );
   }
+
+  // Widget build(BuildContext context, WidgetRef ref) {
+  //   // rebuild the widget when the todo list changes
+  //   AsyncValue<List<Todo>> todos = ref.read(apiTodos);
+  //   int todoSelectedId = ref.watch(todoSelectedIdProvider);
+
+  //   // Let's render the todos in a scrollable list view
+  //   return todos.when(
+  //       loading: () => const CircularProgressIndicator(),
+  //       error: (err, stack) => Text("Error: $err"),
+  //       data: (todos) {
+  //         return Expanded(
+  //           child: todos.isEmpty
+  //               ? const Padding(
+  //                   padding: EdgeInsets.only(top: 16.0),
+  //                   child: Text("No todos created..."),
+  //                 )
+  //               : ListView.builder(
+  //                   shrinkWrap: true,
+  //                   scrollDirection: Axis.vertical,
+  //                   physics: const AlwaysScrollableScrollPhysics(),
+  //                   itemCount: todos.length,
+  //                   itemBuilder: (BuildContext context, int i) {
+  //                     Todo todo = todos[i];
+
+  //                     return ListTile(
+  //                       title: TextButton(
+  //                         style: TextButton.styleFrom(
+  //                           foregroundColor: todo.isCompleted == true
+  //                               ? Colors.green
+  //                               : Colors.black,
+  //                           backgroundColor:
+  //                               todo.id == ref.read(todoSelectedIdProvider)
+  //                                   ? Colors.blue[100]
+  //                                   : null,
+  //                           alignment: Alignment.centerLeft,
+  //                         ),
+  //                         child: Text(todo.content),
+  //                         onPressed: () {
+  //                           ref
+  //                               .read(todoSelectedIdProvider.notifier)
+  //                               .update(todo.id);
+  //                         },
+  //                       ),
+  //                       trailing: todoSelectedId != todo.id
+  //                           ? checkmarkIcon(context, ref, todo)
+  //                           : deleteIcon(context, ref, todo),
+  //                     );
+  //                   },
+  //                 ),
+  //         );
+  //       });
+  // }
 }
