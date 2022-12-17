@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:hello_riverpod/openapi/lib/api.dart';
 import 'package:hello_riverpod/state.dart';
-import 'dart:developer';
 
 void main() async {
   runApp(
@@ -16,6 +15,34 @@ void main() async {
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
+  Widget _futureTodoList(BuildContext context, WidgetRef ref) {
+    return FutureBuilder(
+      future: ref.read(todosProvider.notifier).todosFetch(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return const TodoListView();
+        } else if (snapshot.hasError) {
+          return const Center(
+            child: Text(
+              "Error: Could not retrieve data from the server.",
+            ),
+          );
+        } else {
+          return Column(
+            children: const <Widget>[
+              SizedBox(height: 16.0),
+              CircularProgressIndicator(),
+              SizedBox(height: 16.0),
+              Center(
+                child: Text("Loading data..."),
+              ),
+            ],
+          );
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
@@ -27,28 +54,17 @@ class MyApp extends ConsumerWidget {
         appBar: AppBar(
           title: const Text("Hello Riverpod"),
         ),
-        body: ListView(
-          shrinkWrap: true,
-          children: <Widget>[
-            const TodoForm(),
-            FutureBuilder<bool>(
-              future: ref.read(todosProvider.notifier).todosFetch(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return const TodoListView();
-                } else if (snapshot.hasError) {
-                  return Text("Error: ${snapshot.error}");
-                } else {
-                  return Column(
-                    children: const <Widget>[
-                      SizedBox(height: 32.0),
-                      CircularProgressIndicator(),
-                    ],
-                  );
-                }
-              },
-            ),
-          ],
+        body: RefreshIndicator(
+          onRefresh: ref.read(todosProvider.notifier).todosRefresh,
+          triggerMode: RefreshIndicatorTriggerMode.anywhere,
+          child: ListView(
+            shrinkWrap: true,
+            children: <Widget>[
+              const TodoForm(),
+              const SizedBox(height: 16.0),
+              _futureTodoList(context, ref),
+            ],
+          ),
         ),
       ),
     );
@@ -111,6 +127,11 @@ class TodoForm extends ConsumerWidget {
                       ScaffoldMessenger.of(context).hideCurrentSnackBar();
                       ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text("Todo created")));
+                    }).catchError((err) {
+                      // show message
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text("Could not create todo")));
                     });
                   } else {
                     // update todo content
@@ -148,7 +169,20 @@ class TodoListView extends ConsumerWidget {
       color: todo.isCompleted == true ? Colors.green : null,
       tooltip: "Mark complete",
       onPressed: () {
-        ref.read(todosProvider.notifier).todoToggleIsCompleted(todo.id);
+        ref
+            .read(todosProvider.notifier)
+            .todoToggleIsCompleted(todo.id)
+            .then((res) {
+          // show message
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Todo status updated")));
+        }).catchError((err) {
+          // show message
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Could not update todo status")));
+        });
       },
     );
   }
