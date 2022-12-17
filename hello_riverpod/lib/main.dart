@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:hello_riverpod/openapi/lib/api.dart';
 import 'package:hello_riverpod/state.dart';
+import 'dart:developer';
 
 void main() async {
   runApp(
@@ -12,11 +13,11 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
@@ -26,10 +27,27 @@ class MyApp extends StatelessWidget {
         appBar: AppBar(
           title: const Text("Hello Riverpod"),
         ),
-        body: Column(
-          children: const <Widget>[
-            TodoForm(),
-            TodoListView(),
+        body: ListView(
+          shrinkWrap: true,
+          children: <Widget>[
+            const TodoForm(),
+            FutureBuilder<bool>(
+              future: ref.read(todosProvider.notifier).todosFetch(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return const TodoListView();
+                } else if (snapshot.hasError) {
+                  return Text("Error: ${snapshot.error}");
+                } else {
+                  return Column(
+                    children: const <Widget>[
+                      SizedBox(height: 32.0),
+                      CircularProgressIndicator(),
+                    ],
+                  );
+                }
+              },
+            ),
           ],
         ),
       ),
@@ -44,10 +62,7 @@ class TodoForm extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final formKey = GlobalKey<FormState>();
     final textInputController = TextEditingController();
-    final int todoSelectedId = ref.read(todoSelectedIdProvider);
-
-    // rebuild widget when selected todo ID changes
-    ref.watch(todoSelectedIdProvider);
+    final int todoSelectedId = ref.watch(todoSelectedIdProvider);
 
     // when updating todo, assign input field value to todo content
     if (todoSelectedId != 0) {
@@ -88,17 +103,25 @@ class TodoForm extends ConsumerWidget {
 
                   if (todoSelectedId == 0) {
                     // create todo
-                    ref.read(todosProvider.notifier).todoCreate(content);
-
-                    // show message
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Todo created")));
+                    ref
+                        .read(todosProvider.notifier)
+                        .todoCreate(content)
+                        .then((res) {
+                      // show message
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Todo created")));
+                    });
                   } else {
                     // update todo content
                     ref
                         .read(todosProvider.notifier)
                         .todoUpdateContent(todoSelectedId, content);
+
+                    // show message
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Todo content updated")));
 
                     // reset selected todo
                     ref.read(todoSelectedIdProvider.notifier).reset();
@@ -136,15 +159,16 @@ class TodoListView extends ConsumerWidget {
       color: Colors.red,
       tooltip: "Delete todo",
       onPressed: () {
-        ref.read(todosProvider.notifier).todoDelete(todo.id); // delete todo
+        // delete todo
+        ref.read(todosProvider.notifier).todoDelete(todo.id).then((res) {
+          // show message
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text("Todo deleted")));
 
-        // reset selected todo ID
-        ref.read(todoSelectedIdProvider.notifier).reset();
-
-        // show message
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Todo deleted")));
+          // reset selected todo ID
+          ref.read(todoSelectedIdProvider.notifier).reset();
+        });
       },
     );
   }
@@ -152,65 +176,47 @@ class TodoListView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // rebuild the widget when the todo list changes
-    AsyncValue<Map> joke = ref.watch(jokeProvider);
+    List<Todo> todos = ref.watch(todosProvider);
+    int todoSelectedId = ref.watch(todoSelectedIdProvider);
 
-    return joke.when(
-      loading: () => const CircularProgressIndicator(),
-      error: (err, stack) => Text("Error: $err"),
-      data: (data) => Text(data['joke']),
-    );
+    // Let's render the todos in a scrollable list view
+    return Column(children: <Widget>[
+      todos.isEmpty
+          ? const Padding(
+              padding: EdgeInsets.only(top: 16.0),
+              child: Text("No todos created..."),
+            )
+          : ListView.builder(
+              shrinkWrap: true,
+              scrollDirection: Axis.vertical,
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: todos.length,
+              itemBuilder: (BuildContext context, int i) {
+                Todo todo = todos[i];
+
+                return ListTile(
+                  title: TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: todo.isCompleted == true
+                          ? Colors.green
+                          : Colors.black,
+                      backgroundColor:
+                          todo.id == ref.read(todoSelectedIdProvider)
+                              ? Colors.blue[100]
+                              : null,
+                      alignment: Alignment.centerLeft,
+                    ),
+                    child: Text(todo.content),
+                    onPressed: () {
+                      ref.read(todoSelectedIdProvider.notifier).update(todo.id);
+                    },
+                  ),
+                  trailing: todoSelectedId != todo.id
+                      ? checkmarkIcon(context, ref, todo)
+                      : deleteIcon(context, ref, todo),
+                );
+              },
+            ),
+    ]);
   }
-
-  // Widget build(BuildContext context, WidgetRef ref) {
-  //   // rebuild the widget when the todo list changes
-  //   AsyncValue<List<Todo>> todos = ref.read(apiTodos);
-  //   int todoSelectedId = ref.watch(todoSelectedIdProvider);
-
-  //   // Let's render the todos in a scrollable list view
-  //   return todos.when(
-  //       loading: () => const CircularProgressIndicator(),
-  //       error: (err, stack) => Text("Error: $err"),
-  //       data: (todos) {
-  //         return Expanded(
-  //           child: todos.isEmpty
-  //               ? const Padding(
-  //                   padding: EdgeInsets.only(top: 16.0),
-  //                   child: Text("No todos created..."),
-  //                 )
-  //               : ListView.builder(
-  //                   shrinkWrap: true,
-  //                   scrollDirection: Axis.vertical,
-  //                   physics: const AlwaysScrollableScrollPhysics(),
-  //                   itemCount: todos.length,
-  //                   itemBuilder: (BuildContext context, int i) {
-  //                     Todo todo = todos[i];
-
-  //                     return ListTile(
-  //                       title: TextButton(
-  //                         style: TextButton.styleFrom(
-  //                           foregroundColor: todo.isCompleted == true
-  //                               ? Colors.green
-  //                               : Colors.black,
-  //                           backgroundColor:
-  //                               todo.id == ref.read(todoSelectedIdProvider)
-  //                                   ? Colors.blue[100]
-  //                                   : null,
-  //                           alignment: Alignment.centerLeft,
-  //                         ),
-  //                         child: Text(todo.content),
-  //                         onPressed: () {
-  //                           ref
-  //                               .read(todoSelectedIdProvider.notifier)
-  //                               .update(todo.id);
-  //                         },
-  //                       ),
-  //                       trailing: todoSelectedId != todo.id
-  //                           ? checkmarkIcon(context, ref, todo)
-  //                           : deleteIcon(context, ref, todo),
-  //                     );
-  //                   },
-  //                 ),
-  //         );
-  //       });
-  // }
 }

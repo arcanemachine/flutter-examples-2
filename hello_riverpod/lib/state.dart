@@ -1,75 +1,85 @@
-import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:hello_riverpod/openapi/lib/api.dart';
 // import 'package:hello_riverpod/types.dart';
-import 'package:http/http.dart' as http;
 
-final apiClientProvider = Provider<TodosApi>((ref) {
-  final ApiClient apiClient = ApiClient(basePath: "http://127.0.0.1:8000");
-  return TodosApi(apiClient);
+final ApiClient apiClient = ApiClient(basePath: "http://192.168.1.100:8000");
+final TodosApi todosApiClient = TodosApi(apiClient);
+
+final todoListFetchProvider = FutureProvider<List<Todo>>((ref) async {
+  return await todosApiClient.todosList() as List<Todo>;
 });
-
-// final apiTodos = FutureProvider<List<Todo>>((ref) async {
-//   final apiClient = ref.read(apiClientProvider);
-//
-//   List<Todo> todos = await apiClient.todosList() ?? [];
-//   return todos;
-// });
-
-final apiTodos = FutureProvider<List<Todo>>((ref) async {
-  final url = Uri.parse("http://localhost:8000/api/todos");
-
-  final Map<String, String> headers = {
-    // 'Authorization': "Token ${await secureStorage.read('user_api_token')}",
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-  };
-
-  final response = await http.get(url, headers: headers);
-  final List decodedResponse = jsonDecode(response.body) as List;
-
-  List<Todo> todoList = [];
-  for (int i = 0; i < decodedResponse.length; i++) {
-    // add each job to jobList
-    Todo todo = Todo.fromJson(decodedResponse[i]) as Todo;
-    todoList.add(todo);
-  }
-
-  return todoList;
-});
-
-final jokeProvider = FutureProvider<Map>((ref) async {
-  final url = Uri.parse("https://icanhazdadjoke.com/");
-
-  final Map<String, String> headers = {
-    // 'Authorization': "Token ${await secureStorage.read('user_api_token')}",
-    'Accept': 'application/json',
-  };
-
-  final response = await http.get(url, headers: headers);
-  final Map decodedResponse = jsonDecode(response.body);
-
-  // List<Todo> todoList = [];
-  // for (int i = 0; i < decodedResponse.length; i++) {
-  //   // add each job to jobList
-  //   Todo todo = Todo.fromJson(decodedResponse[i]) as Todo;
-  //   todoList.add(todo);
-  // }
-
-  return decodedResponse;
-});
-
-class JokeNotifier extends StateNotifier<Map> {
-  JokeNotifier() : super({});
-
-  Map jokeGet() {
-    return state;
-  }
-}
 
 class TodosNotifier extends StateNotifier<List<Todo>> {
   TodosNotifier() : super([]);
+
+  Future<bool> todosFetch() async {
+    state = await todosApiClient.todosList() as List<Todo>;
+    return true;
+  }
+
+  Future<void> todoCreate(String content) async {
+    try {
+      final newTodo = await todosApiClient.todosCreate(Todo(
+        id: 0,
+        content: content,
+        isCompleted: false,
+      )) as Todo;
+
+      state = [...state, newTodo];
+    } catch (err) {
+      throw Exception(err);
+    }
+  }
+
+  Future<bool> todoDelete(int todoId) async {
+    try {
+      await todosApiClient.todosDestroy(todoId);
+
+      state = [
+        for (final todo in state)
+          if (todo.id != todoId) todo,
+      ];
+
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  void todoToggleIsCompleted(int todoId) {
+    // TODO: add API request
+    final bool isCompleted =
+        state.where((todo) => todo.id == todoId).toList()[0].isCompleted ??
+            false;
+
+    state = [
+      for (final todo in state)
+        if (todo.id == todoId)
+          Todo(id: todo.id, content: todo.content, isCompleted: !isCompleted)
+        else
+          todo,
+    ];
+  }
+
+  void todoUpdateContent(int todoId, String content) {
+    // TODO: add API request
+    state = [
+      for (var todo in state)
+        if (todo.id == todoId)
+          Todo(id: todo.id, content: content, isCompleted: todo.isCompleted)
+        else
+          todo, // return unchanged todo
+    ];
+  }
+}
+
+final todosProvider = StateNotifierProvider<TodosNotifier, List<Todo>>((ref) {
+  return TodosNotifier();
+});
+
+class TodosLocalNotifier extends StateNotifier<List<Todo>> {
+  TodosLocalNotifier() : super([]);
 
   void todoCreate(String content) {
     List<Todo> todos = state;
@@ -125,9 +135,9 @@ class TodosNotifier extends StateNotifier<List<Todo>> {
   }
 }
 
-final todosProvider = StateNotifierProvider<TodosNotifier, List<Todo>>((ref) {
-  return TodosNotifier();
-});
+// final todosProvider = StateNotifierProvider<TodosNotifier, List<Todo>>((ref) {
+//   return TodosNotifier();
+// });
 
 class TodoSelectedIdNotifier extends StateNotifier<int> {
   TodoSelectedIdNotifier() : super(0);
