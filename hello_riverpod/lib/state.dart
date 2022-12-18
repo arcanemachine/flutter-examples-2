@@ -6,21 +6,13 @@ import 'package:hello_riverpod/openapi/lib/api.dart';
 final ApiClient apiClient = ApiClient(basePath: "http://192.168.1.100:8000");
 final TodosApi todosApiClient = TodosApi(apiClient);
 
-class IsLoadingNotifier extends StateNotifier<bool> {
-  IsLoadingNotifier() : super(true);
-}
-
-final isLoadingProvider = FutureProvider<void>((ref) async {
-  ref.read(todosProvider.notifier).todosRefresh();
-});
-
 class TodosNotifier extends StateNotifier<List<Todo>> {
   TodosNotifier() : super([]);
 
   Future todosRefresh() {
     state = [];
 
-    return todosFetch();
+    return Future.delayed(const Duration(milliseconds: 500), todosFetch);
   }
 
   Future todosFetch() {
@@ -76,7 +68,7 @@ class TodosNotifier extends StateNotifier<List<Todo>> {
   Future<void> todoUpdateContent(int todoId, String content) async {
     // update todo completion status
     Todo updatedTodo = state.where((todo) => todo.id == todoId).toList()[0];
-    updatedTodo.isCompleted = !(updatedTodo.isCompleted as bool);
+    updatedTodo.content = content;
 
     updatedTodo =
         await todosApiClient.todosUpdate(updatedTodo.id, updatedTodo) as Todo;

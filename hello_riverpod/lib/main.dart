@@ -137,15 +137,17 @@ class TodoForm extends ConsumerWidget {
                     // update todo content
                     ref
                         .read(todosProvider.notifier)
-                        .todoUpdateContent(todoSelectedId, content);
+                        .todoUpdateContent(todoSelectedId, content)
+                        .then((res) {
+                      // show message
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Todo content updated")),
+                      );
 
-                    // show message
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Todo content updated")));
-
-                    // reset selected todo
-                    ref.read(todoSelectedIdProvider.notifier).reset();
+                      // reset selected todo
+                      ref.read(todoSelectedIdProvider.notifier).reset();
+                    });
                   }
 
                   textInputController.clear(); // clear text input field
