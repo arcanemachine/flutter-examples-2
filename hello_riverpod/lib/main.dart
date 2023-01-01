@@ -15,6 +15,30 @@ void main() async {
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return MaterialApp(
+      title: "Todo List",
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text("Todo List"),
+        ),
+        body: RefreshIndicator(
+          onRefresh: ref.read(todosProvider.notifier).todosRefresh,
+          triggerMode: RefreshIndicatorTriggerMode.anywhere,
+          child: const TodoScreen(),
+        ),
+      ),
+    );
+  }
+}
+
+class TodoScreen extends ConsumerWidget {
+  const TodoScreen({Key? key}) : super(key: key);
+
   Widget _futureTodoList(BuildContext context, WidgetRef ref) {
     return FutureBuilder(
       future: ref.watch(todosProvider.notifier).todosFetch(),
@@ -45,28 +69,13 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text("Hello Riverpod"),
-        ),
-        body: RefreshIndicator(
-          onRefresh: ref.read(todosProvider.notifier).todosRefresh,
-          triggerMode: RefreshIndicatorTriggerMode.anywhere,
-          child: ListView(
-            shrinkWrap: true,
-            children: <Widget>[
-              const TodoForm(),
-              const SizedBox(height: 16.0),
-              _futureTodoList(context, ref),
-            ],
-          ),
-        ),
-      ),
+    return ListView(
+      shrinkWrap: true,
+      children: <Widget>[
+        const TodoForm(),
+        const SizedBox(height: 16.0),
+        _futureTodoList(context, ref),
+      ],
     );
   }
 }
