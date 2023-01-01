@@ -17,7 +17,7 @@ class MyApp extends ConsumerWidget {
 
   Widget _futureTodoList(BuildContext context, WidgetRef ref) {
     return FutureBuilder(
-      future: ref.read(todosProvider.notifier).todosFetch(),
+      future: ref.watch(todosProvider.notifier).todosFetch(),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return const TodoListView();

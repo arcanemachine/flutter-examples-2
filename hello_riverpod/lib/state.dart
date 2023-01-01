@@ -3,8 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hello_riverpod/openapi/lib/api.dart';
 // import 'package:hello_riverpod/types.dart';
 
-final ApiClient apiClient = ApiClient(basePath: "http://192.168.1.100:8000");
+final ApiClient apiClient = ApiClient(basePath: "https://tower.test/api");
 final TodosApi todosApiClient = TodosApi(apiClient);
+
+class IsLoadingNotifier extends StateNotifier<bool> {
+  IsLoadingNotifier() : super(false);
+}
+
+final pIsLoading = StateNotifierProvider<IsLoadingNotifier, bool>((ref) {
+  return IsLoadingNotifier();
+});
 
 class TodosNotifier extends StateNotifier<List<Todo>> {
   TodosNotifier() : super([]);
@@ -24,6 +32,7 @@ class TodosNotifier extends StateNotifier<List<Todo>> {
 
   Future<void> todoCreate(String content) async {
     try {
+      // create API request
       final newTodo = await todosApiClient.todosCreate(Todo(
         id: 0,
         content: content,
@@ -38,8 +47,10 @@ class TodosNotifier extends StateNotifier<List<Todo>> {
 
   Future<bool> todoDelete(int todoId) async {
     try {
+      // create API request
       await todosApiClient.todosDestroy(todoId);
 
+      // update local state
       state = [
         for (final todo in state)
           if (todo.id != todoId) todo,
@@ -52,13 +63,15 @@ class TodosNotifier extends StateNotifier<List<Todo>> {
   }
 
   Future<void> todoToggleIsCompleted(int todoId) async {
-    // update todo completion status
-    Todo updatedTodo = state.where((todo) => todo.id == todoId).toList()[0];
-    updatedTodo.isCompleted = !(updatedTodo.isCompleted as bool);
+    // create new todo with updated completion status
+    Todo modifiedTodo = state.where((todo) => todo.id == todoId).toList()[0];
+    modifiedTodo.isCompleted = !(modifiedTodo.isCompleted as bool);
 
-    updatedTodo =
-        await todosApiClient.todosUpdate(updatedTodo.id, updatedTodo) as Todo;
+    // create API request
+    Todo updatedTodo =
+        await todosApiClient.todosUpdate(modifiedTodo.id, modifiedTodo) as Todo;
 
+    // update local state
     state = [
       for (final todo in state)
         if (todo.id == todoId) updatedTodo else todo,
@@ -66,13 +79,15 @@ class TodosNotifier extends StateNotifier<List<Todo>> {
   }
 
   Future<void> todoUpdateContent(int todoId, String content) async {
-    // update todo completion status
-    Todo updatedTodo = state.where((todo) => todo.id == todoId).toList()[0];
-    updatedTodo.content = content;
+    // create new todo with updated content
+    Todo modifiedTodo = state.where((todo) => todo.id == todoId).toList()[0];
+    modifiedTodo.content = content;
 
-    updatedTodo =
-        await todosApiClient.todosUpdate(updatedTodo.id, updatedTodo) as Todo;
+    // create API request
+    Todo updatedTodo =
+        await todosApiClient.todosUpdate(modifiedTodo.id, modifiedTodo) as Todo;
 
+    // update local state
     state = [
       for (final todo in state)
         if (todo.id == todoId) updatedTodo else todo,
