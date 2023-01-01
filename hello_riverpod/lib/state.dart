@@ -1,9 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:flutter/foundation.dart';
 import 'package:hello_riverpod/openapi/lib/api.dart';
-// import 'package:hello_riverpod/types.dart';
 
-final ApiClient apiClient = ApiClient(basePath: "https://tower.test/api");
+final ApiClient apiClient = kDebugMode
+    ? ApiClient(basePath: "http://192.168.1.100:8001")
+    : ApiClient(basePath: "https://your-domain.com/api");
+
 final TodosApi todosApiClient = TodosApi(apiClient);
 
 class IsLoadingNotifier extends StateNotifier<bool> {
