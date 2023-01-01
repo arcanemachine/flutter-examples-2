@@ -181,10 +181,32 @@ class ApiClient {
           return valueString == 'true' || valueString == '1';
         case 'DateTime':
           return value is DateTime ? value : DateTime.tryParse(value);
+        case 'Login':
+          return Login.fromJson(value);
+        case 'PasswordChange':
+          return PasswordChange.fromJson(value);
+        case 'PasswordReset':
+          return PasswordReset.fromJson(value);
+        case 'PasswordResetConfirm':
+          return PasswordResetConfirm.fromJson(value);
         case 'PatchedTodo':
           return PatchedTodo.fromJson(value);
+        case 'PatchedUserDetails':
+          return PatchedUserDetails.fromJson(value);
+        case 'Register':
+          return Register.fromJson(value);
+        case 'ResendEmailVerification':
+          return ResendEmailVerification.fromJson(value);
+        case 'RestAuthDetail':
+          return RestAuthDetail.fromJson(value);
         case 'Todo':
           return Todo.fromJson(value);
+        case 'Token':
+          return Token.fromJson(value);
+        case 'UserDetails':
+          return UserDetails.fromJson(value);
+        case 'VerifyEmail':
+          return VerifyEmail.fromJson(value);
         default:
           dynamic match;
           if (value is List && (match = _regList.firstMatch(targetType)?.group(1)) != null) {

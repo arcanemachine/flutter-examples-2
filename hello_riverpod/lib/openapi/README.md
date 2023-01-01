@@ -39,22 +39,23 @@ Please follow the [installation procedure](#installation--usage) and then run th
 ```dart
 import 'package:openapi/api.dart';
 
-// TODO Configure HTTP basic authorization: basicAuth
-//defaultApiClient.getAuthentication<HttpBasicAuth>('basicAuth').username = 'YOUR_USERNAME'
-//defaultApiClient.getAuthentication<HttpBasicAuth>('basicAuth').password = 'YOUR_PASSWORD';
 // TODO Configure API key authorization: cookieAuth
 //defaultApiClient.getAuthentication<ApiKeyAuth>('cookieAuth').apiKey = 'YOUR_API_KEY';
 // uncomment below to setup prefix (e.g. Bearer) for API key, if needed
 //defaultApiClient.getAuthentication<ApiKeyAuth>('cookieAuth').apiKeyPrefix = 'Bearer';
+// TODO Configure API key authorization: tokenAuth
+//defaultApiClient.getAuthentication<ApiKeyAuth>('tokenAuth').apiKey = 'YOUR_API_KEY';
+// uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+//defaultApiClient.getAuthentication<ApiKeyAuth>('tokenAuth').apiKeyPrefix = 'Bearer';
 
-final api_instance = TodosApi();
-final todo = Todo(); // Todo | 
+final api_instance = AuthApi();
+final login = Login(); // Login | 
 
 try {
-    final result = api_instance.todosCreate(todo);
+    final result = api_instance.authLoginCreate(login);
     print(result);
 } catch (e) {
-    print('Exception when calling TodosApi->todosCreate: $e\n');
+    print('Exception when calling AuthApi->authLoginCreate: $e\n');
 }
 
 ```
@@ -65,6 +66,17 @@ All URIs are relative to *http://localhost*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
+*AuthApi* | [**authLoginCreate**](doc//AuthApi.md#authlogincreate) | **POST** /api/auth/login/ | 
+*AuthApi* | [**authLogoutCreate**](doc//AuthApi.md#authlogoutcreate) | **POST** /api/auth/logout/ | 
+*AuthApi* | [**authPasswordChangeCreate**](doc//AuthApi.md#authpasswordchangecreate) | **POST** /api/auth/password/change/ | 
+*AuthApi* | [**authPasswordResetConfirmCreate**](doc//AuthApi.md#authpasswordresetconfirmcreate) | **POST** /api/auth/password/reset/confirm/ | 
+*AuthApi* | [**authPasswordResetCreate**](doc//AuthApi.md#authpasswordresetcreate) | **POST** /api/auth/password/reset/ | 
+*AuthApi* | [**authRegistrationCreate**](doc//AuthApi.md#authregistrationcreate) | **POST** /api/auth/registration/ | 
+*AuthApi* | [**authRegistrationResendEmailCreate**](doc//AuthApi.md#authregistrationresendemailcreate) | **POST** /api/auth/registration/resend-email/ | 
+*AuthApi* | [**authRegistrationVerifyEmailCreate**](doc//AuthApi.md#authregistrationverifyemailcreate) | **POST** /api/auth/registration/verify-email/ | 
+*AuthApi* | [**authUserPartialUpdate**](doc//AuthApi.md#authuserpartialupdate) | **PATCH** /api/auth/user/ | 
+*AuthApi* | [**authUserRetrieve**](doc//AuthApi.md#authuserretrieve) | **GET** /api/auth/user/ | 
+*AuthApi* | [**authUserUpdate**](doc//AuthApi.md#authuserupdate) | **PUT** /api/auth/user/ | 
 *TodosApi* | [**todosCreate**](doc//TodosApi.md#todoscreate) | **POST** /api/todos | 
 *TodosApi* | [**todosDestroy**](doc//TodosApi.md#todosdestroy) | **DELETE** /api/todos/{id} | 
 *TodosApi* | [**todosList**](doc//TodosApi.md#todoslist) | **GET** /api/todos | 
@@ -75,22 +87,35 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
+ - [Login](doc//Login.md)
+ - [PasswordChange](doc//PasswordChange.md)
+ - [PasswordReset](doc//PasswordReset.md)
+ - [PasswordResetConfirm](doc//PasswordResetConfirm.md)
  - [PatchedTodo](doc//PatchedTodo.md)
+ - [PatchedUserDetails](doc//PatchedUserDetails.md)
+ - [Register](doc//Register.md)
+ - [ResendEmailVerification](doc//ResendEmailVerification.md)
+ - [RestAuthDetail](doc//RestAuthDetail.md)
  - [Todo](doc//Todo.md)
+ - [Token](doc//Token.md)
+ - [UserDetails](doc//UserDetails.md)
+ - [VerifyEmail](doc//VerifyEmail.md)
 
 
 ## Documentation For Authorization
 
-
-## basicAuth
-
-- **Type**: HTTP Basic authentication
 
 ## cookieAuth
 
 - **Type**: API key
 - **API key parameter name**: sessionid
 - **Location**: 
+
+## tokenAuth
+
+- **Type**: API key
+- **API key parameter name**: Authorization
+- **Location**: HTTP header
 
 
 ## Author

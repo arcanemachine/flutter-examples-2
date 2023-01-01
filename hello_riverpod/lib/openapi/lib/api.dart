@@ -27,10 +27,22 @@ part 'auth/oauth.dart';
 part 'auth/http_basic_auth.dart';
 part 'auth/http_bearer_auth.dart';
 
+part 'api/auth_api.dart';
 part 'api/todos_api.dart';
 
+part 'model/login.dart';
+part 'model/password_change.dart';
+part 'model/password_reset.dart';
+part 'model/password_reset_confirm.dart';
 part 'model/patched_todo.dart';
+part 'model/patched_user_details.dart';
+part 'model/register.dart';
+part 'model/resend_email_verification.dart';
+part 'model/rest_auth_detail.dart';
 part 'model/todo.dart';
+part 'model/token.dart';
+part 'model/user_details.dart';
+part 'model/verify_email.dart';
 
 
 const _delimiters = {'csv': ',', 'ssv': ' ', 'tsv': '\t', 'pipes': '|'};
